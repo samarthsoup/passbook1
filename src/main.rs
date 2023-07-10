@@ -3,10 +3,11 @@ use axum::{routing::get, routing::post, Router};
 mod functions;
 use crate::functions::{
     deposit, depositactivity, home, login, loginactivity, delete, signup, signupactivity,
-    userpage, withdraw, history, withdrawactivity, assign, assignactivity
+    userpage, withdraw, history, withdrawactivity
 };
 
 mod html;
+mod database;
 
 #[tokio::main]
 async fn main() {
@@ -22,8 +23,6 @@ async fn main() {
         .route("/depositactivity/:userid", post(depositactivity))
         .route("/withdraw/:userid", get(withdraw))
         .route("/withdrawactivity/:userid", post(withdrawactivity))
-        .route("/assign/:userid", get(assign))
-        .route("/assignactivity/:userid", post(assignactivity))
         .route("/delete/:userid", get(delete)); 
     
     axum::Server::bind(&"0.0.0.0:3000".parse().unwrap())
