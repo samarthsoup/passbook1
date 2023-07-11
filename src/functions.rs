@@ -1,17 +1,22 @@
-use axum::{response::Html};
+use axum::response::Html;
 use minijinja::render;
 use serde::{Deserialize, Serialize};
-use std::time::{Instant};
-use crate::database::{insert_into_users, select_from_users, update, delete_row, select_from_transactions, insert_into_transactions};
+use std::time::Instant;
+use chrono::Utc;
+
+use crate::database::{insert_into_users, select_from_users, update, delete_row, select_from_transactions, insert_into_transactions, distinct_check};
 
 use crate::html::{
     DEPOSIT, FAILURE, HISTORY, HOME, LOGIN, LOGINACTIVITY, REMOVESUCCESS, SIGNUP,
     SIGNUPFAILURE, SIGNUPSUCCESS, SUCCESS, USERPAGE, WITHDRAW, LOGINFAILURE
 };
 
-pub use crate::database::{
-    distinct_check
-};
+#[derive(Serialize)]
+pub struct User{
+    pub userid:i32,
+    pub name:String,
+    pub balance:f64
+}
 
 pub async fn home() -> Html<String> {
     let start = Instant::now();
@@ -24,6 +29,7 @@ pub async fn home() -> Html<String> {
     Html(r)
 }
 
+//signup
 pub async fn signup() -> Html<String> {
     let start = Instant::now();
 
@@ -41,24 +47,20 @@ pub struct SignupInput {
     name: String,
 }
 
-#[derive(Serialize)]
-pub struct User{
-    pub userid:i32,
-    pub name:String,
-    pub balance:f64
+fn handle_signup_form(form: axum::Form<SignupInput>) -> User{
+    let user = User{
+        userid: form.id,
+        name: form.name.to_string(), 
+        balance: 0.0
+    };
+
+    user
 }
 
 pub async fn signupactivity(form: axum::Form<SignupInput>) -> Html<String> {
     let start = Instant::now();
-    let accno = form.id;
-    let accname = &form.name;
-    println!("user's input- account number: {}, name: {}", accno, accname);
 
-    let user = User{
-        userid: accno,
-        name: accname.to_string(),
-        balance: 0.0
-    };
+    let user = handle_signup_form(form);
 
     let count = distinct_check( "userid".to_string(), user.userid).await;
 
@@ -66,11 +68,9 @@ pub async fn signupactivity(form: axum::Form<SignupInput>) -> Html<String> {
         let b = render!(SIGNUPFAILURE);
         return Html(b);
     }else {
-        let row = insert_into_users(user).await;
-        
-        let inserted_userid: i32 = row.get(0);
-        let inserted_name: &str = row.get(1);
-        println!("successfully inserted- userid: {}, name: {}", inserted_userid, inserted_name);
+        let user = insert_into_users(user).await;
+    
+        println!("successfully inserted- userid: {}, name: {}", user.userid, user.name);
     }
 
     let u = render!(SIGNUPSUCCESS);
@@ -81,6 +81,9 @@ pub async fn signupactivity(form: axum::Form<SignupInput>) -> Html<String> {
     Html(u)
 }
 
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+//login
 pub async fn login() -> Html<String> {
     let start = Instant::now();
 
@@ -97,43 +100,34 @@ pub struct LoginInput {
     id: i32,
 }
 
+fn handle_login_form(form: axum::Form<LoginInput>) -> i32 {
+    form.id
+}
+
 pub async fn loginactivity(form: axum::Form<LoginInput>) -> Html<String>{
-    let start = Instant::now();
-
-    let userid = form.id;
-
+    let userid = handle_login_form(form);
     let count = distinct_check("userid".to_string(), userid).await;
 
     if count > 0 {
         let r = render!(LOGINACTIVITY, userid => userid);
-
-        let duration = start.elapsed();
-        println!("LOGIN activity(success)-time elapsed: {:?}", duration);
-
         return Html(r);
     }
 
     let b = render!(LOGINFAILURE, userid => userid);
 
-    let duration = start.elapsed();
-    println!("LOGIN activity(failure)-time elapsed: {:?}", duration);
-
     Html(b)
 }
 
+//--------------------------------------------------------------------------------------------------------------------
+
+//userpage
 pub async fn userpage(params: axum::extract::Path<String>) -> Html<String> {
     let start = Instant::now();
 
     let active_user = params.to_string();
     let userid:i32 = active_user.parse().unwrap();
 
-    let row = select_from_users(userid).await;
-    
-    let user = User{
-        userid: row.get(0),
-        name: row.get(1),
-        balance: row.get(2)
-    };
+    let user = select_from_users(userid).await;
 
     let r = render!(USERPAGE, user => user);
 
@@ -143,11 +137,16 @@ pub async fn userpage(params: axum::extract::Path<String>) -> Html<String> {
     Html(r)
 }
 
+//-----------------------------------------------------------------------------------------------------------------------
+
+//history
+
 #[derive(Debug,Serialize)]
 pub struct Transaction {
-    date: String,
-    amount: f64,
-    category: String
+    pub date: String,
+    pub userid: i32,
+    pub amount: f64,
+    pub category: String
 }
 
 pub async fn history(params: axum::extract::Path<String>) -> Html<String> {
@@ -156,19 +155,7 @@ pub async fn history(params: axum::extract::Path<String>) -> Html<String> {
     let active_user = params.to_string();
     let userid:i32 = active_user.parse().unwrap();
 
-    let rows = select_from_transactions(userid).await;
-
-    let mut transactions: Vec<Transaction> = Vec::new();
-
-    for row in rows {
-        let transaction = Transaction {
-            date: row.get(0),
-            amount: row.get(1),
-            category: row.get(2)
-        };
-
-        transactions.push(transaction);
-    }
+    let transactions = select_from_transactions(userid).await;
 
     let r = render!(HISTORY, transactions => transactions, userid => userid);
 
@@ -178,18 +165,13 @@ pub async fn history(params: axum::extract::Path<String>) -> Html<String> {
     Html(r)
 }
 
+//deposit
 pub async fn deposit(params: axum::extract::Path<String>) -> Html<String> {
     let start = Instant::now();
     let active_user = params.to_string();
     let userid:i32 = active_user.parse().unwrap();
 
-    let row = select_from_users(userid).await;
-
-    let user = User{
-        userid: row.get(0),
-        name: row.get(1),
-        balance: row.get(2)
-    };
+    let user = select_from_users(userid).await;
 
     let q = render!(DEPOSIT, user => user);
 
@@ -201,29 +183,35 @@ pub async fn deposit(params: axum::extract::Path<String>) -> Html<String> {
 
 #[derive(Deserialize)]
 pub struct UserInput {
-    id: i32, 
+    userid: i32, 
     amount: f64,
     category: String
+}
+
+fn handle_transaction_form(form: axum::Form<UserInput>) -> Transaction{
+    let current_date = Utc::now().naive_utc();
+    let date = current_date.to_string();
+
+    let transaction = Transaction{
+        date,
+        userid: form.userid,
+        amount: form.amount,
+        category: form.category.to_string()
+    };
+
+    transaction
 }
 
 pub async fn depositactivity(form: axum::Form<UserInput>) -> Html<String> {
     let start = Instant::now();
 
-    let userid = form.id;
-    let amount = form.amount;
-    let category = &form.category;
+    let transaction = handle_transaction_form(form);
 
-    insert_into_transactions(userid, amount, category.to_string()).await;
+    insert_into_transactions(transaction.date, transaction.userid, transaction.amount, transaction.category.to_string()).await;
 
-    update(userid, amount).await;
+    update(transaction.userid, transaction.amount).await;
 
-    let row = select_from_users(userid).await;
-    
-    let user = User{
-        userid: row.get(0),
-        name: row.get(1),
-        balance: row.get(2)
-    };
+    let user = select_from_users(transaction.userid).await;
     
     let y = render!(SUCCESS, user => user);
 
@@ -241,13 +229,8 @@ pub async fn withdraw(params: axum::extract::Path<String>) -> Html<String> {
     let active_user = params.to_string();
     let userid:i32 = active_user.parse().unwrap();
 
-    let row = select_from_users(userid).await;
+    let user = select_from_users(userid).await;
 
-    let user = User{
-        userid: row.get(0),
-        name: row.get(1),
-        balance: row.get(2)
-    };
     let s = render!(WITHDRAW, user => user);
 
     let duration = start.elapsed();
@@ -259,19 +242,11 @@ pub async fn withdraw(params: axum::extract::Path<String>) -> Html<String> {
 pub async fn withdrawactivity(form: axum::Form<UserInput>) -> Html<String> {
     let start = Instant::now();
 
-    let amount = form.amount;
-    let userid = form.id;
-    let category = &form.category;
+    let transaction = handle_transaction_form(form);
 
-    let row = select_from_users(userid).await;
+    let user = select_from_users(transaction.userid).await;
 
-    let user = User{
-        userid: row.get(0),
-        name: row.get(1),
-        balance: row.get(2)
-    };
-
-    if user.balance < amount {
+    if user.balance < transaction.amount {
         let u = render!(FAILURE, user => user);
 
         let duration = start.elapsed();
@@ -279,8 +254,8 @@ pub async fn withdrawactivity(form: axum::Form<UserInput>) -> Html<String> {
 
         return Html(u);
     } else {
-        update(userid, -amount).await;
-        insert_into_transactions(userid, -amount, category.to_string()).await;
+        update(transaction.userid, -transaction.amount).await;
+        insert_into_transactions(transaction.date, transaction.userid, -transaction.amount, transaction.category.to_string()).await;
     }
     
     let x = render!(SUCCESS, user => user);

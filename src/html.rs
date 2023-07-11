@@ -68,7 +68,7 @@ pub const SIGNUP: &str = r#"
     <p style="text-align:center; font-size:50px"><b>SIGNUP</b></p>
     <br><br>
     <div class="form">
-    <form action = "/signupactivity" method = "post">
+    <form action = "/signup" method = "post">
         <label for="id">UserID:</label><br>
         <input type = "number" name = "id" min = "1" style="border:none; border-bottom:2px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br>
         <label for="name">Name:</label><br>
@@ -148,7 +148,7 @@ pub const LOGIN: &str = r#"
     <p style="text-align:center; font-size:50px"><b>LOGIN</b></p>
     <br>
     <div class="form">
-    <form action = "/loginactivity" method = "post">
+    <form action = "/login" method = "post">
         <label for="id">account id:</label><br>
         <input type = "number" name = "id" min = "1" style="border:none; border-bottom:2px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br>
         <input type = "submit" value = "submit" style="background-color:#121212; border:none; color:#121212;">
@@ -256,7 +256,7 @@ pub const DEPOSIT: &str = r#"
 
 <body style="background-color:#121212; font-family:helvetica; color:cornsilk;" link="ivory" alink="cornsilk" vlink="ivory">
     <p style="font-size:40px;">Deposit</p>
-    <form action = "/depositactivity/{{ user.userid }}" method = "post">
+    <form action = "/deposit/{{ user.userid }}" method = "post">
         <input type="hidden" id = "id" name="id" value="{{ user.userid }}">
         <label for="amount">amount to be deposited:</label><br>
         <input type = "number" step = "0.01" name = "amount" min = "0" style="border:none; border-bottom:1px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br>
@@ -282,7 +282,7 @@ pub const WITHDRAW: &str = r#"
 
 <body style="background-color:#121212; font-family:helvetica; color:cornsilk;" link="ivory" alink="cornsilk" vlink="ivory">
     <p style="font-size:40px;">Withdraw</p>
-    <form action = "/withdrawactivity/{{ user.userid }}" method = "post">
+    <form action = "/withdraw/{{ user.userid }}" method = "post">
         <input type="hidden" id = "id" name="id" value="{{ user.userid }}">
         <label for="amount">Amount to be withdrawn:</label><br>
         <input type = "number" step = "0.01" name = "amount" min = "0" style="border:none; border-bottom:1px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br><br>

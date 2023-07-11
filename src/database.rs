@@ -1,9 +1,8 @@
-use tokio_postgres::{NoTls, Row};
-use chrono::Utc;
+use tokio_postgres::{NoTls, Client};
 
-use crate::functions::User;
+use crate::functions::{User, Transaction};
 
-pub async fn distinct_check(column_to_check:String, column_to_check_value:i32) -> i64 {
+pub async fn database_connection() -> Client{
     let (client, connection) =
         tokio_postgres::connect("postgresql://postgres:postgres@localhost/postgres", NoTls).await.unwrap();
 
@@ -12,6 +11,12 @@ pub async fn distinct_check(column_to_check:String, column_to_check_value:i32) -
             eprintln!("connection error: {}", e);
         }
     });
+
+    client
+}
+
+pub async fn distinct_check(column_to_check:String, column_to_check_value:i32) -> i64 {
+    let client = database_connection().await;
 
     let distinct_check_query = format!("SELECT COUNT(*) FROM users WHERE {} = $1",column_to_check);
 
@@ -21,15 +26,8 @@ pub async fn distinct_check(column_to_check:String, column_to_check_value:i32) -
     count
 }
 
-pub async fn insert_into_users(user:User) -> Row{
-    let (client, connection) =
-        tokio_postgres::connect("postgresql://postgres:postgres@localhost/postgres", NoTls).await.unwrap();
-
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
-        }
-    });
+pub async fn insert_into_users(user:User) -> User{
+    let client = database_connection().await;
 
     let insert_query = format!("INSERT INTO users (userid, name, balance) VALUES ($1, $2, $3)");
 
@@ -38,21 +36,17 @@ pub async fn insert_into_users(user:User) -> Row{
     let select_query = format!("SELECT * FROM users WHERE userid = $1");
     let row = client.query_one(&select_query, &[&user.userid]).await.unwrap();
 
-    row
+    let user = User{
+        userid: row.get(0),
+        name: row.get(1),
+        balance: row.get(2)
+    };
+
+    user
 }
 
-pub async fn insert_into_transactions(userid:i32, amount:f64, category:String){
-    let current_date = Utc::now().naive_utc();
-    let date = current_date.to_string();
-
-    let (client, connection) =
-        tokio_postgres::connect("postgresql://postgres:postgres@localhost/postgres", NoTls).await.unwrap();
-
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
-        }
-    });
+pub async fn insert_into_transactions(date:String, userid:i32, amount:f64, category:String){
+    let client = database_connection().await;
 
     let insert_query = format!("INSERT INTO transactions (date, userid, amount, category) VALUES ($1, $2, $3, $4) RETURNING id");
     let row = client.query_one(&insert_query, &[&date,&userid,&amount,&category]).await.unwrap();
@@ -61,51 +55,50 @@ pub async fn insert_into_transactions(userid:i32, amount:f64, category:String){
     println!("transaction ID {} inserted successfully.", transaction_id);
 }
 
-pub async fn select_from_users(userid:i32) -> Row{
-    let (client, connection) =
-        tokio_postgres::connect("postgresql://postgres:postgres@localhost/postgres", NoTls).await.unwrap();
-
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
-        }
-    });
+pub async fn select_from_users(userid:i32) -> User{
+    let client = database_connection().await;
 
     let select_query = format!("SELECT * FROM users WHERE userid = $1");
     let row = client.query_one(&select_query, &[&userid]).await.unwrap();
 
-    row
+    let user = User{
+        userid: row.get(0),
+        name: row.get(1),
+        balance: row.get(2)
+    };
+
+    user
 }
 
-pub async fn select_from_transactions(userid:i32) -> Vec<Row> {
-    let (client, connection) =
-        tokio_postgres::connect("postgresql://postgres:postgres@localhost/postgres", NoTls).await.unwrap();
-    tokio::spawn(async move {   
-        if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
-        }
-    });
+pub async fn select_from_transactions(userid:i32) -> Vec<Transaction> {
+    let client = database_connection().await;
 
     let select_query = "
-        SELECT date, amount, category
+        SELECT date, userid, amount, category
         FROM transactions
         WHERE userid = $1
     ";
 
+    let mut transactions: Vec<Transaction> = Vec::new();
+
     let rows = client.query(select_query, &[&userid]).await.unwrap();
 
-    rows
+    for row in rows {
+        let transaction = Transaction {
+            date: row.get(0),
+            userid: row.get(1),
+            amount: row.get(2),
+            category: row.get(3)
+        };
+
+        transactions.push(transaction);
+    }
+
+    transactions
 }
 
 pub async fn update(userid:i32, amount:f64){
-    let (client, connection) =
-        tokio_postgres::connect("postgresql://postgres:postgres@localhost/postgres", NoTls).await.unwrap();
-
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
-        }
-    });
+    let client = database_connection().await;
 
     let update_query = format!("UPDATE users SET balance = balance + $1 WHERE userid = $2");
     client.execute(&update_query, &[&amount, &userid]).await.unwrap();
@@ -113,14 +106,7 @@ pub async fn update(userid:i32, amount:f64){
 }
 
 pub async fn delete_row(userid:i32){
-    let (client, connection) =
-        tokio_postgres::connect("postgresql://postgres:postgres@localhost/postgres", NoTls).await.unwrap();
-
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
-        }
-    });
+    let client = database_connection().await;
 
     let delete_query = format!("DELETE FROM users WHERE userid = $1");
 
