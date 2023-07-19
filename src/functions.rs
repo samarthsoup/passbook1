@@ -24,7 +24,7 @@ pub async fn home() -> Html<String> {
     let r = render!(HOME);
 
     let duration = start.elapsed();
-    println!("rendering HOME-time elapsed: {:?}", duration);
+    println!("rendering HOME-time elapsed: {:?}\n", duration);
 
     Html(r)
 }
@@ -36,23 +36,31 @@ pub async fn signup() -> Html<String> {
     let n = render!(SIGNUP);
 
     let duration = start.elapsed();
-    println!("rendering SIGNUP-time elapsed: {:?}", duration);
+    println!("rendering SIGNUP-time elapsed: {:?}\n", duration);
 
     Html(n)
 }
 
 #[derive(Deserialize)]
 pub struct SignupInput {
-    id: i32,
+    id: String,
     name: String,
 }
 
 fn handle_signup_form(form: axum::Form<SignupInput>) -> User{
+    let start = Instant::now();
+    let userid = form.id.parse::<i32>().unwrap();
+
     let user = User{
-        userid: form.id,
+        userid,
         name: form.name.to_string(), 
         balance: 0.0
     };
+
+    println!("Form input- userid:{}, name: {}", user.userid, user.name);
+
+    let duration = start.elapsed();
+    println!("HTML form put into a User struct- time elapsed: {:?}\n", duration);
 
     user
 }
@@ -66,11 +74,13 @@ pub async fn signupactivity(form: axum::Form<SignupInput>) -> Html<String> {
 
     if count > 0 {
         let b = render!(SIGNUPFAILURE);
+
+        println!("could not sign up user(userid is already taken)\n");
         return Html(b);
     }else {
         let user = insert_into_users(user).await;
     
-        println!("successfully inserted- userid: {}, name: {}", user.userid, user.name);
+        println!("successfully inserted- userid: {}, name: {}\n", user.userid, user.name);
     }
 
     let u = render!(SIGNUPSUCCESS);
@@ -81,8 +91,6 @@ pub async fn signupactivity(form: axum::Form<SignupInput>) -> Html<String> {
     Html(u)
 }
 
-//-----------------------------------------------------------------------------------------------------------------------------------------------------------
-
 //login
 pub async fn login() -> Html<String> {
     let start = Instant::now();
@@ -90,7 +98,7 @@ pub async fn login() -> Html<String> {
     let r = render!(LOGIN);
 
     let duration = start.elapsed();
-    println!("rendering LOGIN-time elapsed: {:?}", duration);
+    println!("rendering LOGIN-time elapsed: {:?}\n", duration);
 
     Html(r)
 }
@@ -101,6 +109,7 @@ pub struct LoginInput {
 }
 
 fn handle_login_form(form: axum::Form<LoginInput>) -> i32 {
+    println!("logging in with userid: {}\n", form.id);
     form.id
 }
 
@@ -110,15 +119,14 @@ pub async fn loginactivity(form: axum::Form<LoginInput>) -> Html<String>{
 
     if count > 0 {
         let r = render!(LOGINACTIVITY, userid => userid);
+        println!("logged user in successfully(userid = {})\n", userid);
         return Html(r);
     }
 
     let b = render!(LOGINFAILURE, userid => userid);
-
+    println!("login failed(userid does not exist)\n");
     Html(b)
 }
-
-//--------------------------------------------------------------------------------------------------------------------
 
 //userpage
 pub async fn userpage(params: axum::extract::Path<String>) -> Html<String> {
@@ -132,15 +140,12 @@ pub async fn userpage(params: axum::extract::Path<String>) -> Html<String> {
     let r = render!(USERPAGE, user => user);
 
     let duration = start.elapsed();
-    println!("rendering USERPAGE-time elapsed: {:?}", duration);
+    println!("rendering USERPAGE-time elapsed: {:?}\n", duration);
 
     Html(r)
 }
 
-//-----------------------------------------------------------------------------------------------------------------------
-
 //history
-
 #[derive(Debug,Serialize)]
 pub struct Transaction {
     pub date: String,
@@ -160,7 +165,7 @@ pub async fn history(params: axum::extract::Path<String>) -> Html<String> {
     let r = render!(HISTORY, transactions => transactions, userid => userid);
 
     let duration = start.elapsed();
-    println!("rendering HISTORY-time elapsed: {:?}", duration);
+    println!("rendering HISTORY-time elapsed: {:?}\n", duration);
 
     Html(r)
 }
@@ -176,7 +181,7 @@ pub async fn deposit(params: axum::extract::Path<String>) -> Html<String> {
     let q = render!(DEPOSIT, user => user);
 
     let duration = start.elapsed();
-    println!("rendering DEPOSIT-time elapsed: {:?}", duration);
+    println!("rendering DEPOSIT-time elapsed: {:?}\n", duration);
 
     Html(q)
 }
@@ -199,6 +204,9 @@ fn handle_transaction_form(form: axum::Form<UserInput>) -> Transaction{
         category: form.category.to_string()
     };
 
+    println!("HTML form is stored in Transaction struct");
+    println!("transaction details- userid: {}, amount: {}, category: {}\n", transaction.userid, transaction.amount, transaction.category);
+
     transaction
 }
 
@@ -215,10 +223,8 @@ pub async fn depositactivity(form: axum::Form<UserInput>) -> Html<String> {
     
     let y = render!(SUCCESS, user => user);
 
-    println!("money added successfully");    
-
     let duration = start.elapsed();
-    println!("DEPOSIT activity-time elapsed: {:?}", duration);
+    println!("amount deposited: {} - time elapsed: {:?}", transaction.amount, duration);
 
     Html(y)
 }
@@ -234,7 +240,7 @@ pub async fn withdraw(params: axum::extract::Path<String>) -> Html<String> {
     let s = render!(WITHDRAW, user => user);
 
     let duration = start.elapsed();
-    println!("rendering WITHDRAW-time elapsed: {:?}", duration);
+    println!("rendering WITHDRAW-time elapsed: {:?}\n", duration);
 
     Html(s)
 }
@@ -250,7 +256,7 @@ pub async fn withdrawactivity(form: axum::Form<UserInput>) -> Html<String> {
         let u = render!(FAILURE, user => user);
 
         let duration = start.elapsed();
-        println!("WITHDRAW activity(failure)-time elapsed: {:?}", duration);
+        println!("withdraw failed(not enough balance)-time elapsed: {:?}\n", duration);
 
         return Html(u);
     } else {
@@ -261,7 +267,7 @@ pub async fn withdrawactivity(form: axum::Form<UserInput>) -> Html<String> {
     let x = render!(SUCCESS, user => user);
 
     let duration = start.elapsed();
-    println!("WITHDRAW activity(success)-time elapsed: {:?}", duration);
+    println!("amount withdrawn: {}-time elapsed: {:?}\n", transaction.amount, duration);
 
     Html(x)
 }
@@ -277,7 +283,7 @@ pub async fn delete(params: axum::extract::Path<String>) -> Html<String> {
     let h = render!(REMOVESUCCESS);
 
     let duration = start.elapsed();
-    println!("deleted a user's file-time elapsed: {:?}", duration);
+    println!("deleted a user's file-time elapsed: {:?}\n", duration);
 
     Html(h)
 }

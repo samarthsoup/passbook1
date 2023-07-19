@@ -24,14 +24,15 @@ pub const HOME: &str = r#"
 
 </head>
 
-<body style="background-color:#121212; font-family:helvetica; color:cornsilk;" link="ivory;" alink="cornsilk" vlink="ivory">
+<body style="background-color:#121212; font-family:helvetica; color:cornsilk;" link="cornsilk" alink="ffe990" vlink="cornsilk">
 <br><br><br><br><br><br><br><br><br><br><br><br><br><br>
-    <p style="text-align:center; font-size:50px;"><b>HOMEPAGE</b></p>
+    <p style="text-align:center; font-size:70px;"><b>HOMEPAGE</b></p>
     <div class="center">
-    <a href="/login" style="text-decoration:none;">Login</a><br>
+    <a href="/login" style="text-decoration:none; font-size: 30px;">Login</a><br>
     </div>
+    <br>
     <div class="center">
-    <a href="/signup" style="text-decoration:none;">Sign Up</a><br><br><br>
+    <a href="/signup" style="text-decoration:none; font-size: 30px;">Sign Up</a><br><br><br>
     </div>
 </body>
 </html>
@@ -257,7 +258,7 @@ pub const DEPOSIT: &str = r#"
 <body style="background-color:#121212; font-family:helvetica; color:cornsilk;" link="ivory" alink="cornsilk" vlink="ivory">
     <p style="font-size:40px;">Deposit</p>
     <form action = "/deposit/{{ user.userid }}" method = "post">
-        <input type="hidden" id = "id" name="id" value="{{ user.userid }}">
+        <input type="hidden" id = "userid" name="userid" value="{{ user.userid }}">
         <label for="amount">amount to be deposited:</label><br>
         <input type = "number" step = "0.01" name = "amount" min = "0" style="border:none; border-bottom:1px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br>
         <select name="category" id="category" style="background-color:#121212; border:none; color:cornsilk; outline:none;">
@@ -283,7 +284,7 @@ pub const WITHDRAW: &str = r#"
 <body style="background-color:#121212; font-family:helvetica; color:cornsilk;" link="ivory" alink="cornsilk" vlink="ivory">
     <p style="font-size:40px;">Withdraw</p>
     <form action = "/withdraw/{{ user.userid }}" method = "post">
-        <input type="hidden" id = "id" name="id" value="{{ user.userid }}">
+        <input type="hidden" id = "userid" name="userid" value="{{ user.userid }}">
         <label for="amount">Amount to be withdrawn:</label><br>
         <input type = "number" step = "0.01" name = "amount" min = "0" style="border:none; border-bottom:1px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br><br>
         <label for="category">category:</label><br>

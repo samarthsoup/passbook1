@@ -1,11 +1,5 @@
 use axum::{routing::get, Router};
 
-use std::sync::Arc;
-use std::thread;
-use std::time::Duration;
-
-use reqwest::Client;
-
 mod functions;
 use crate::functions::{
     deposit, depositactivity, home, login, loginactivity, delete, signup, signupactivity,
