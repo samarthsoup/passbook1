@@ -3,6 +3,8 @@ use minijinja::render;
 use serde::{Deserialize, Serialize};
 use std::time::Instant;
 use chrono::Utc;
+use axum::Json;
+use axum::http::StatusCode;
 
 use crate::database::{insert_into_users, select_from_users, update, delete_row, select_from_transactions, insert_into_transactions, distinct_check};
 
@@ -16,6 +18,23 @@ pub struct User{
     pub userid:i32,
     pub name:String,
     pub balance:f64
+}
+
+#[derive(Debug,Serialize)]
+pub struct Transaction {
+    pub date: String,
+    pub userid: i32,
+    pub amount: f64,
+    pub category: String
+}
+
+#[derive(Deserialize)]
+pub struct FormInput{
+    pub userid: Option<String>,
+    pub name: Option<String>,
+    pub balance: Option<f64>,
+    pub amount: Option<f64>,
+    pub category: Option<String>
 }
 
 pub async fn home() -> Html<String> {
@@ -41,19 +60,23 @@ pub async fn signup() -> Html<String> {
     Html(n)
 }
 
-#[derive(Deserialize)]
-pub struct SignupInput {
-    id: String,
-    name: String,
-}
-
-fn handle_signup_form(form: axum::Form<SignupInput>) -> User{
+fn handle_signup_form(form: axum::Form<FormInput>) -> User{
     let start = Instant::now();
-    let userid = form.id.parse::<i32>().unwrap();
+
+    let input = FormInput {
+        userid: form.userid.clone(),
+        name: form.name.clone(),
+        balance: None,
+        amount: None,
+        category: None
+    };
+
+    let userid = input.userid.expect("userid field empty").parse::<i32>().unwrap();
+    let name = input.name.expect("name field empty");
 
     let user = User{
         userid,
-        name: form.name.to_string(), 
+        name,
         balance: 0.0
     };
 
@@ -65,7 +88,7 @@ fn handle_signup_form(form: axum::Form<SignupInput>) -> User{
     user
 }
 
-pub async fn signupactivity(form: axum::Form<SignupInput>) -> Html<String> {
+pub async fn signupactivity(form: axum::Form<FormInput>) -> Html<String> {
     let start = Instant::now();
 
     let user = handle_signup_form(form);
@@ -103,17 +126,22 @@ pub async fn login() -> Html<String> {
     Html(r)
 }
 
-#[derive(Deserialize)]
-pub struct LoginInput {
-    id: i32,
+fn handle_login_form(form: axum::Form<FormInput>) -> i32 {
+    let input = FormInput {
+        userid: form.userid.clone(),
+        name: None,
+        balance: None,
+        amount: None,
+        category: None
+    };
+
+    let userid = input.userid.expect("userid field empty").parse::<i32>().unwrap();
+
+    println!("logging in with userid: {}\n", userid);
+    userid
 }
 
-fn handle_login_form(form: axum::Form<LoginInput>) -> i32 {
-    println!("logging in with userid: {}\n", form.id);
-    form.id
-}
-
-pub async fn loginactivity(form: axum::Form<LoginInput>) -> Html<String>{
+pub async fn loginactivity(form: axum::Form<FormInput>) -> Html<String>{
     let userid = handle_login_form(form);
     let count = distinct_check("userid".to_string(), userid).await;
 
@@ -146,14 +174,6 @@ pub async fn userpage(params: axum::extract::Path<String>) -> Html<String> {
 }
 
 //history
-#[derive(Debug,Serialize)]
-pub struct Transaction {
-    pub date: String,
-    pub userid: i32,
-    pub amount: f64,
-    pub category: String
-}
-
 pub async fn history(params: axum::extract::Path<String>) -> Html<String> {
     let start = Instant::now();
 
@@ -186,22 +206,27 @@ pub async fn deposit(params: axum::extract::Path<String>) -> Html<String> {
     Html(q)
 }
 
-#[derive(Deserialize)]
-pub struct UserInput {
-    userid: i32, 
-    amount: f64,
-    category: String
-}
+fn handle_transaction_form(form: axum::Form<FormInput>) -> Transaction{
+    let input = FormInput {
+        userid: form.userid.clone(),
+        name: None,
+        balance: None,
+        amount: form.amount,
+        category: form.category.clone()
+    };
 
-fn handle_transaction_form(form: axum::Form<UserInput>) -> Transaction{
     let current_date = Utc::now().naive_utc();
     let date = current_date.to_string();
 
+    let userid = input.userid.expect("userid field empty").parse::<i32>().unwrap();
+    let amount = input.amount.expect("amount field empty");
+    let category = input.category.expect("category field empty");
+
     let transaction = Transaction{
         date,
-        userid: form.userid,
-        amount: form.amount,
-        category: form.category.to_string()
+        userid,
+        amount,
+        category
     };
 
     println!("HTML form is stored in Transaction struct");
@@ -210,7 +235,7 @@ fn handle_transaction_form(form: axum::Form<UserInput>) -> Transaction{
     transaction
 }
 
-pub async fn depositactivity(form: axum::Form<UserInput>) -> Html<String> {
+pub async fn depositactivity(form: axum::Form<FormInput>) -> Html<String> {
     let start = Instant::now();
 
     let transaction = handle_transaction_form(form);
@@ -229,6 +254,7 @@ pub async fn depositactivity(form: axum::Form<UserInput>) -> Html<String> {
     Html(y)
 }
 
+//withdraw
 pub async fn withdraw(params: axum::extract::Path<String>) -> Html<String> {
     let start = Instant::now();
 
@@ -245,7 +271,7 @@ pub async fn withdraw(params: axum::extract::Path<String>) -> Html<String> {
     Html(s)
 }
 
-pub async fn withdrawactivity(form: axum::Form<UserInput>) -> Html<String> {
+pub async fn withdrawactivity(form: axum::Form<FormInput>) -> Html<String> {
     let start = Instant::now();
 
     let transaction = handle_transaction_form(form);
@@ -272,6 +298,8 @@ pub async fn withdrawactivity(form: axum::Form<UserInput>) -> Html<String> {
     Html(x)
 }
 
+
+//delete user
 pub async fn delete(params: axum::extract::Path<String>) -> Html<String> {
     let start = Instant::now();
 
@@ -287,3 +315,42 @@ pub async fn delete(params: axum::extract::Path<String>) -> Html<String> {
 
     Html(h)
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Data {
+    userid: Option<i32>,
+    name: Option<String>,
+}
+
+pub async fn handle_signup_post(data: axum::extract::Json<Data>) -> Result<Json<Data>, String>{
+    let request_data = Data {
+        userid: data.userid,
+        name: data.name.clone()
+    };
+
+    let userid = request_data.userid.expect("userid field empty");
+    let name = request_data.name.clone().expect("name field empty");
+
+    println!("received data: name = {}, userid = {}\n", name, userid);
+
+    let user = User{
+        userid,
+        name, 
+        balance: 0.0 
+    };
+
+    let count = distinct_check( "userid".to_string(), userid).await;
+
+    if count > 0 {
+        let status_code = format!("status code: {}", StatusCode::BAD_REQUEST);
+        eprintln!("user already exists\n");
+        return Err(status_code)
+    }else {
+        let user = insert_into_users(user).await;
+        
+        println!("successfully inserted- userid: {}, name: {}\n", user.userid, user.name);
+    }
+
+    Ok(Json(request_data))
+}
+//curl -X POST -H "Content-Type: application/json" -d '{"name": "uuqx", "userid":56}' http://localhost:3000/signuppost

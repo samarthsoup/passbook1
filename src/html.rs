@@ -70,8 +70,8 @@ pub const SIGNUP: &str = r#"
     <br><br>
     <div class="form">
     <form action = "/signup" method = "post">
-        <label for="id">UserID:</label><br>
-        <input type = "number" name = "id" min = "1" style="border:none; border-bottom:2px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br>
+        <label for="userid">UserID:</label><br>
+        <input type = "number" name = "userid" min = "1" style="border:none; border-bottom:2px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br>
         <label for="name">Name:</label><br>
         <input type = "text" name = "name" style="border:none; border-bottom:2px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br>
         <input type = "submit" value = "submit" style="background-color:#121212; border:none; color:#121212;">
@@ -150,8 +150,8 @@ pub const LOGIN: &str = r#"
     <br>
     <div class="form">
     <form action = "/login" method = "post">
-        <label for="id">account id:</label><br>
-        <input type = "number" name = "id" min = "1" style="border:none; border-bottom:2px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br>
+        <label for="userid">account id:</label><br>
+        <input type = "number" name = "userid" min = "1" style="border:none; border-bottom:2px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br>
         <input type = "submit" value = "submit" style="background-color:#121212; border:none; color:#121212;">
     </form>
     </div>
