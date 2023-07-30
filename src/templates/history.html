@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+<head>
+<title>user history</title>
+</head>
+<body style="background-color:#121212; font-family:helvetica; color:cornsilk;" link="ivory" alink="cornsilk" vlink="ivory">
+<h1>transactions</h1>
+<p>
+    {% for transaction in transactions %}
+        {{ transaction.amount }}<br>
+        {{ transaction.date }}<br>
+        {{ transaction.category }}<br>
+        <br>
+        -----------------------------------------------------------------------
+        <br><br>
+    {% endfor %}
+</p>
+            
+<p><a href="/userpage/{{ userid }}" style="text-decoration:none;">back to main menu</a></p>
+</html>

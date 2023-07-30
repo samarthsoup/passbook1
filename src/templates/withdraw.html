@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>withdraw page</title>
+</head>
+
+<body style="background-color:#121212; font-family:helvetica; color:cornsilk;" link="ivory" alink="cornsilk" vlink="ivory">
+    <p style="font-size:40px;">Withdraw</p>
+    <form action = "/withdraw/{{ user.userid }}" method = "post">
+        <input type="hidden" id = "userid" name="userid" value="{{ user.userid }}">
+        <label for="amount">Amount to be withdrawn:</label><br>
+        <input type = "number" step = "0.01" name = "amount" min = "0" style="border:none; border-bottom:1px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br><br>
+        <label for="category">category:</label><br>
+        <select name="category" id="category" style="background-color:#121212;border:none;color:cornsilk;outline:none;">
+          <option value="bills">bills</option>
+          <option value="food">food</option>
+          <option value="vacation">vacation</option>
+          <option value="savings">savings</option>
+          <option value="misc">misc</option>
+        </select>
+        <input type = "submit" value = "submit" style="background-color:#121212; border:none; color:#121212;">
+    </form>
+</body>
+</html>

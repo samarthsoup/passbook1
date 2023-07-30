@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>{{ user.name }}'s dashboard</title>
+
+</head>
+
+<body style="background-color:#121212; font-family:helvetica; color:cornsilk; margin:60px;" link="ivory" alink="cornsilk" vlink="ivory">
+    <p>Welcome {{ user.name }}</p>
+
+    userid: {{ user.userid }}<br>
+    available balance: {{ user.balance }}<br><br><br>
+
+    <p style="font-size:25px;">Actions:<p>
+    <a href="/deposit/{{ user.userid }}" style="text-decoration:none;">Deposit</a><br><br>
+    <a href="/withdraw/{{ user.userid }}" style="text-decoration:none;">Withdraw</a><br><br>
+    <a href="/history/{{ user.userid }}" style="text-decoration:none;">Full transaction history</a><br><br>
+    <a href="/delete/{{ user.userid }}" style="text-decoration:none;">Delete account</a>
+</body>
+</html>

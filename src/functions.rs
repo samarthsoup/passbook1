@@ -5,13 +5,10 @@ use std::time::Instant;
 use chrono::Utc;
 use axum::Json;
 use axum::http::StatusCode;
+use std::fs::File;
+use std::io::Read;
 
 use crate::database::{insert_into_users, select_from_users, update, delete_row, select_from_transactions, insert_into_transactions, distinct_check};
-
-use crate::html::{
-    DEPOSIT, FAILURE, HISTORY, HOME, LOGIN, LOGINACTIVITY, REMOVESUCCESS, SIGNUP,
-    SIGNUPFAILURE, SIGNUPSUCCESS, SUCCESS, USERPAGE, WITHDRAW, LOGINFAILURE
-};
 
 #[derive(Serialize)]
 pub struct User{
@@ -37,27 +34,35 @@ pub struct FormInput{
     pub category: Option<String>
 }
 
-pub async fn home() -> Html<String> {
-    let start = Instant::now();
+async fn get_html_file(filename: &str) -> Result<String, std::io::Error> {
+    let path = format!("src/templates/{}.html", filename);
+    let mut file = File::open(path)?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+    Ok(contents)
+}
 
-    let r = render!(HOME);
+pub async fn home() -> Html<String>  {
+    let start = Instant::now();
+    
+    let render = get_html_file("homepage").await.unwrap();
 
     let duration = start.elapsed();
     println!("rendering HOME-time elapsed: {:?}\n", duration);
 
-    Html(r)
+    Html(render)
 }
 
 //signup
 pub async fn signup() -> Html<String> {
     let start = Instant::now();
 
-    let n = render!(SIGNUP);
+    let render = get_html_file("signup").await.unwrap();
 
     let duration = start.elapsed();
     println!("rendering SIGNUP-time elapsed: {:?}\n", duration);
 
-    Html(n)
+    Html(render)
 }
 
 fn handle_signup_form(form: axum::Form<FormInput>) -> User{
@@ -67,7 +72,7 @@ fn handle_signup_form(form: axum::Form<FormInput>) -> User{
         userid: form.userid.clone(),
         name: form.name.clone(),
         balance: None,
-        amount: None,
+        amount: None,   
         category: None
     };
 
@@ -96,34 +101,39 @@ pub async fn signupactivity(form: axum::Form<FormInput>) -> Html<String> {
     let count = distinct_check( "userid".to_string(), user.userid).await;
 
     if count > 0 {
-        let b = render!(SIGNUPFAILURE);
+        let render = get_html_file("signupfailure").await.unwrap();
 
         println!("could not sign up user(userid is already taken)\n");
-        return Html(b);
+
+        let duration = start.elapsed();
+
+        println!("SIGNUP activity(failure)-time elapsed: {:?}", duration);
+        
+        return Html(render);
     }else {
         let user = insert_into_users(user).await;
     
         println!("successfully inserted- userid: {}, name: {}\n", user.userid, user.name);
     }
 
-    let u = render!(SIGNUPSUCCESS);
+    let render = get_html_file("signupsuccess").await.unwrap();
 
     let duration = start.elapsed();
-    println!("SIGNUP activity-time elapsed: {:?}", duration);
+    println!("SIGNUP activity(success)-time elapsed: {:?}", duration);
 
-    Html(u)
+    Html(render)
 }
 
 //login
 pub async fn login() -> Html<String> {
     let start = Instant::now();
 
-    let r = render!(LOGIN);
+    let render = get_html_file("login").await.unwrap();
 
     let duration = start.elapsed();
     println!("rendering LOGIN-time elapsed: {:?}\n", duration);
 
-    Html(r)
+    Html(render)
 }
 
 fn handle_login_form(form: axum::Form<FormInput>) -> i32 {
@@ -146,14 +156,16 @@ pub async fn loginactivity(form: axum::Form<FormInput>) -> Html<String>{
     let count = distinct_check("userid".to_string(), userid).await;
 
     if count > 0 {
-        let r = render!(LOGINACTIVITY, userid => userid);
+        let html = get_html_file("loginactivity").await.unwrap();
+        let render = render!(&html, userid => userid);
         println!("logged user in successfully(userid = {})\n", userid);
-        return Html(r);
+        return Html(render);
     }
 
-    let b = render!(LOGINFAILURE, userid => userid);
+    let html = get_html_file("loginfailure").await.unwrap();
+    let render = render!(&html, userid => userid);
     println!("login failed(userid does not exist)\n");
-    Html(b)
+    Html(render)
 }
 
 //userpage
@@ -165,7 +177,8 @@ pub async fn userpage(params: axum::extract::Path<String>) -> Html<String> {
 
     let user = select_from_users(userid).await;
 
-    let r = render!(USERPAGE, user => user);
+    let html = get_html_file("userpage").await.unwrap();
+    let r = render!(&html, user => user);
 
     let duration = start.elapsed();
     println!("rendering USERPAGE-time elapsed: {:?}\n", duration);
@@ -182,7 +195,8 @@ pub async fn history(params: axum::extract::Path<String>) -> Html<String> {
 
     let transactions = select_from_transactions(userid).await;
 
-    let r = render!(HISTORY, transactions => transactions, userid => userid);
+    let html = get_html_file("history").await.unwrap();
+    let r = render!(&html, transactions => transactions, userid => userid);
 
     let duration = start.elapsed();
     println!("rendering HISTORY-time elapsed: {:?}\n", duration);
@@ -198,7 +212,8 @@ pub async fn deposit(params: axum::extract::Path<String>) -> Html<String> {
 
     let user = select_from_users(userid).await;
 
-    let q = render!(DEPOSIT, user => user);
+    let html = get_html_file("deposit").await.unwrap();
+    let q = render!(&html, user => user);
 
     let duration = start.elapsed();
     println!("rendering DEPOSIT-time elapsed: {:?}\n", duration);
@@ -246,7 +261,8 @@ pub async fn depositactivity(form: axum::Form<FormInput>) -> Html<String> {
 
     let user = select_from_users(transaction.userid).await;
     
-    let y = render!(SUCCESS, user => user);
+    let html = get_html_file("transactionsuccess").await.unwrap();
+    let y = render!(&html, user => user);
 
     let duration = start.elapsed();
     println!("amount deposited: {} - time elapsed: {:?}", transaction.amount, duration);
@@ -263,7 +279,8 @@ pub async fn withdraw(params: axum::extract::Path<String>) -> Html<String> {
 
     let user = select_from_users(userid).await;
 
-    let s = render!(WITHDRAW, user => user);
+    let html = get_html_file("withdraw").await.unwrap();
+    let s = render!(&html, user => user);
 
     let duration = start.elapsed();
     println!("rendering WITHDRAW-time elapsed: {:?}\n", duration);
@@ -279,7 +296,8 @@ pub async fn withdrawactivity(form: axum::Form<FormInput>) -> Html<String> {
     let user = select_from_users(transaction.userid).await;
 
     if user.balance < transaction.amount {
-        let u = render!(FAILURE, user => user);
+        let html = get_html_file("transactionfailure").await.unwrap();
+        let u = render!(&html, user => user);
 
         let duration = start.elapsed();
         println!("withdraw failed(not enough balance)-time elapsed: {:?}\n", duration);
@@ -290,7 +308,8 @@ pub async fn withdrawactivity(form: axum::Form<FormInput>) -> Html<String> {
         insert_into_transactions(transaction.date, transaction.userid, -transaction.amount, transaction.category.to_string()).await;
     }
     
-    let x = render!(SUCCESS, user => user);
+    let html = get_html_file("transactionsuccess").await.unwrap();
+    let x = render!(&html, user => user);
 
     let duration = start.elapsed();
     println!("amount withdrawn: {}-time elapsed: {:?}\n", transaction.amount, duration);
@@ -308,12 +327,12 @@ pub async fn delete(params: axum::extract::Path<String>) -> Html<String> {
 
     delete_row(userid).await;
 
-    let h = render!(REMOVESUCCESS);
+    let html = get_html_file("removeaccountsuccess").await.unwrap();
 
     let duration = start.elapsed();
     println!("deleted a user's file-time elapsed: {:?}\n", duration);
 
-    Html(h)
+    Html(html)
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -354,3 +373,5 @@ pub async fn handle_signup_post(data: axum::extract::Json<Data>) -> Result<Json<
     Ok(Json(request_data))
 }
 //curl -X POST -H "Content-Type: application/json" -d '{"name": "uuqx", "userid":56}' http://localhost:3000/signuppost
+
+

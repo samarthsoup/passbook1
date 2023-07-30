@@ -6,7 +6,6 @@ use crate::functions::{
     userpage, withdraw, history, withdrawactivity, handle_signup_post
 };
 
-mod html;
 mod database;
 
 #[tokio::main]

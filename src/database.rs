@@ -95,6 +95,7 @@ pub async fn select_from_transactions(userid:i32) -> Vec<Transaction> {
         SELECT date, userid, amount, category
         FROM transactions
         WHERE userid = $1
+        ORDER BY date DESC
     ";
 
     let mut transactions: Vec<Transaction> = Vec::new();
