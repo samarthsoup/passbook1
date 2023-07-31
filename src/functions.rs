@@ -337,8 +337,8 @@ pub async fn delete(params: axum::extract::Path<String>) -> Html<String> {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Data {
-    userid: Option<String>,
-    name: Option<String>,
+    userid: Option<String>, //even though userid is an integer, we have to make it a string field because the browser sends it as a json string
+    name: Option<String>, 
 }
 
 pub async fn handle_signup_post(data: axum::extract::Json<Data>) -> Result<Json<Data>, String>{
@@ -347,7 +347,7 @@ pub async fn handle_signup_post(data: axum::extract::Json<Data>) -> Result<Json<
         name: data.name.clone()
     };
 
-    let userid = request_data.userid.clone().expect("userid field empty").parse::<i32>().unwrap();
+    let userid = request_data.userid.clone().expect("userid field empty").parse::<i32>().unwrap(); 
     let name = request_data.name.clone().expect("name field empty");
 
     println!("received data: name = {}, userid = {}\n", name, userid);
