@@ -337,17 +337,17 @@ pub async fn delete(params: axum::extract::Path<String>) -> Html<String> {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Data {
-    userid: Option<i32>,
+    userid: Option<String>,
     name: Option<String>,
 }
 
 pub async fn handle_signup_post(data: axum::extract::Json<Data>) -> Result<Json<Data>, String>{
     let request_data = Data {
-        userid: data.userid,
+        userid: data.userid.clone(),
         name: data.name.clone()
     };
 
-    let userid = request_data.userid.expect("userid field empty");
+    let userid = request_data.userid.clone().expect("userid field empty").parse::<i32>().unwrap();
     let name = request_data.name.clone().expect("name field empty");
 
     println!("received data: name = {}, userid = {}\n", name, userid);
