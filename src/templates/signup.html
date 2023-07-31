@@ -18,7 +18,7 @@
         <input type = "number" name = "userid" min = "1" style="border:none; border-bottom:2px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br>
         <label for="name">Name:</label><br>
         <input type = "text" name = "name" style="border:none; border-bottom:2px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br>
-        <button type = "submit" style="background-color:#121212; border:none; color:#121212;"> submit </button>
+        <input type = "submit" background-color:#121212; border:none; color:#121212;>
     </form>
 
     <script>
@@ -27,19 +27,18 @@
         event.preventDefault();
 
         const formData = new FormData(form);
-        console.log(formData.get('userid'));
-
         const data = Object.fromEntries(formData);
-        console.log(data);
 
-        fetch('http://localhost:3000/signuppost', {
+        fetch('http://localhost:3000/signupsuccess', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(data)
+          body: JSON.stringify(data),
         })
-      })
+        .then(response => response.json())
+      });
+
     </script>
 </body>
 </html>

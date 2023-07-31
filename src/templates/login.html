@@ -28,11 +28,28 @@
     <p style="text-align:center; font-size:50px"><b>LOGIN</b></p>
     <br>
     <div class="form">
-    <form action = "/login" method = "post">
+    <form class="form">
         <label for="userid">account id:</label><br>
         <input type = "number" name = "userid" min = "1" style="border:none; border-bottom:2px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br>
-        <input type = "submit" value = "submit" style="background-color:#121212; border:none; color:#121212;">
+        <input type = "submit" value="submit" style="background-color:#121212; border:none; color:#121212;">
     </form>
     </div>
+    <script>
+      const form = document.querySelector('.form');
+      form.addEventListener('submit', event => {
+        event.preventDefault();
+
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData);
+
+        fetch('http://localhost:3000/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        })
+      })
+    </script>
 </body>
 </html>
