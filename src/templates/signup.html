@@ -20,7 +20,6 @@
         <input type = "text" name = "name" style="border:none; border-bottom:2px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br>
         <input type = "submit" background-color:#121212; border:none; color:#121212;>
     </form>
-
     <script>
       const form = document.querySelector('.form');
       form.addEventListener('submit', event => {
@@ -29,16 +28,28 @@
         const formData = new FormData(form);
         const data = Object.fromEntries(formData);
 
-        fetch('http://localhost:3000/signupsuccess', {
+        fetch('http://localhost:3000/signup', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(data),
         })
-        .then(response => response.json())
+        .then(response => {
+            if (response.ok) {
+                // Form submission was successful, reload the page
+                location.reload();
+            } else {
+                // Handle errors if needed
+                console.error('Form submission failed');
+            }
+        })
+        .catch(error => {
+            console.error('Error occurred during form submission:', error);
+        });
       });
 
     </script>
+    
 </body>
 </html>
