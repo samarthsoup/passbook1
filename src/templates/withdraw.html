@@ -31,14 +31,28 @@
         const formData = new FormData(form);
         const data = Object.fromEntries(formData);
 
-        fetch('http://localhost:3000/withdraw', {
+        fetch('http://localhost:3000/withdraw/{{ user.userid }}', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(data)
+          body: JSON.stringify(data),
         })
-      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.text();
+        })
+        .then(data => {
+          document.open();
+          document.write(data);
+          document.close();
+        })
+        .catch(error => {
+          alert('Error: ' + error.message);
+        });
+      });
     </script>
 </body>
 </html>

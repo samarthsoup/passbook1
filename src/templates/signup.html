@@ -6,6 +6,20 @@
 
   <title>new account</title>
 
+  <style>
+    .form_pos{
+      position:relative;
+      width:100%;
+      height:1em;
+    }
+    .form_pos form{
+      position:absolute;
+      top:50%;
+      left:50%;
+      transform: translate(-50%,-50%);
+    }
+    
+  </style>
   
 </head>
 
@@ -13,13 +27,13 @@
 <br><br><br><br><br><br><br><br><br><br><br><br><br><br>
     <p style="text-align:center; font-size:50px"><b>SIGNUP</b></p>
     <br><br>
+    <div class="form_pos">
     <form class="form">
-        <label for="userid">UserID:</label><br>
-        <input type = "number" name = "userid" min = "1" style="border:none; border-bottom:2px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br>
-        <label for="name">Name:</label><br>
-        <input type = "text" name = "name" style="border:none; border-bottom:2px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br>
-        <input type = "submit" background-color:#121212; border:none; color:#121212;>
+        <input placeholder = "userid" type = "number" name = "userid" min = "1" style="border:none; border-bottom:2px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br>
+        <input placeholder="name" type = "text" name = "name" style="border:none; border-bottom:2px solid cornsilk; background-color:#121212; color:cornsilk; outline:none"><br>
+        <input type = "submit" style="background-color:#121212; border:none; color:#121212;">
     </form>
+    </div>
     <script>
       const form = document.querySelector('.form');
       form.addEventListener('submit', event => {
@@ -36,19 +50,20 @@
           body: JSON.stringify(data),
         })
         .then(response => {
-            if (response.ok) {
-                // Form submission was successful, reload the page
-                location.reload();
-            } else {
-                // Handle errors if needed
-                console.error('Form submission failed');
-            }
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.text();
+        })
+        .then(data => {
+          document.open();
+          document.write(data);
+          document.close();
         })
         .catch(error => {
-            console.error('Error occurred during form submission:', error);
+          alert('Error: ' + error.message);
         });
       });
-
     </script>
     
 </body>

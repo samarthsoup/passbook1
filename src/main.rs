@@ -7,6 +7,7 @@ use crate::functions::{
 };
 
 mod database;
+mod http;
 
 #[tokio::main]
 async fn main() {

@@ -18,7 +18,7 @@
           <option value="salary">salary</option>
           <option value="misc">misc</option>
         </select>
-        <input type = "submit" value="submit" style="background-color:#121212; border:none; color:#121212;">
+        <input type = "submit" style="background-color:#121212; border:none; color:#121212;">
     </form>
     <script>
       const form = document.querySelector('.form');
@@ -28,14 +28,28 @@
         const formData = new FormData(form);
         const data = Object.fromEntries(formData);
 
-        fetch('http://localhost:3000/deposit', {
+        fetch('http://localhost:3000/deposit/{{ user.userid }}', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(data)
+          body: JSON.stringify(data),
         })
-      })
+        .then(response => {
+          //if (!response.ok) {
+            //throw new Error('Network response was not ok');
+          //}
+          return response.text();
+        })
+        .then(data => {
+          document.open();
+          document.write(data);
+          document.close();
+        })
+        .catch(error => {
+          alert('Error: ' + error.message);
+        });
+      });
     </script>
 </body>
 </html>

@@ -2,11 +2,11 @@ use axum::response::Html;
 use minijinja::render;
 use serde::{Deserialize, Serialize};
 use std::time::Instant;
-use chrono::Utc;
 use std::fs::File;
 use std::io::Read;
 
 use crate::database::{insert_into_users, select_from_users, update, delete_row, select_from_transactions, insert_into_transactions, distinct_check};
+use crate::http::{handle_signup_request, handle_login_form, handle_transaction_form};
 
 #[derive(Serialize)]
 pub struct User{
@@ -63,34 +63,6 @@ pub async fn signup() -> Html<String> {
     Html(render)
 }
 
-fn handle_signup_request(data: axum::extract::Json<Data>) -> User{
-    let start = Instant::now();
-
-    let input = Data {
-        userid: data.userid.clone(),
-        name: data.name.clone(),
-        balance: None,
-        amount: None,
-        category: None
-    };
-
-    let userid = input.userid.expect("userid field empty").parse::<i32>().unwrap();
-    let name = input.name.expect("name field empty");
-
-    let user = User { 
-        userid, 
-        name, 
-        balance: 0.0 
-    };
-
-    println!("http response payload: {:?}", data);
-
-    let duration = start.elapsed();
-    println!("payload put into a User struct- time elapsed: {:?}\n", duration);
-
-    user
-}
-
 pub async fn signupactivity(data: axum::extract::Json<Data>) -> Html<String> {
     let start = Instant::now();
 
@@ -132,21 +104,6 @@ pub async fn login() -> Html<String> {
     println!("rendering LOGIN-time elapsed: {:?}\n", duration);
 
     Html(render)
-}
-
-fn handle_login_form(data: axum::extract::Json<Data>) -> i32 {
-    let input = Data {
-        userid: data.userid.clone(),
-        name: None,
-        balance: None,
-        amount: None,
-        category: None
-    };
-
-    let userid = input.userid.expect("userid field empty").parse::<i32>().unwrap();
-
-    println!("logging in with userid: {}\n", userid);
-    userid
 }
 
 pub async fn loginactivity(data: axum::extract::Json<Data>) -> Html<String>{
@@ -218,35 +175,6 @@ pub async fn deposit(params: axum::extract::Path<String>) -> Html<String> {
     println!("rendering DEPOSIT-time elapsed: {:?}\n", duration);
 
     Html(q)
-}
-
-fn handle_transaction_form(data: axum::extract::Json<Data>) -> Transaction{
-    let input = Data {
-        userid: data.userid.clone(),
-        name: None,
-        balance: None,
-        amount: data.amount.clone(),
-        category: data.category.clone()
-    };
-
-    let current_date = Utc::now().naive_utc();
-    let date = current_date.to_string();
-
-    let userid = input.userid.expect("userid field empty").parse::<i32>().unwrap();
-    let amount = input.amount.expect("amount field empty").parse::<f64>().unwrap();
-    let category = input.category.expect("category field empty");
-
-    let transaction = Transaction{
-        date,
-        userid,
-        amount,
-        category
-    };
-
-    println!("http payload is stored in Transaction struct");
-    println!("transaction details- userid: {}, amount: {}, category: {}\n", transaction.userid, transaction.amount, transaction.category);
-
-    transaction
 }
 
 pub async fn depositactivity(data: axum::extract::Json<Data>) -> Html<String> {
